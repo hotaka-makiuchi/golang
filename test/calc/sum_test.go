@@ -1,11 +1,25 @@
 package calc
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
+
+func setup() {
+	println("setup")
+}
+
+func teardown() {
+	println("teardown")
+}
 
 func TestMain(m *testing.M) {
-	println("<test start>")
-	m.Run()
-	println("<test finish>")
+	setup()
+	ret := m.Run()
+	if ret == 0 {
+		teardown()
+	}
+	os.Exit(ret)
 }
 
 func TestSum_Multi(t *testing.T) {
