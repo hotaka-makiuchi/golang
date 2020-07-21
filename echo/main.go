@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo-contrib/session"
+	"gopkg.in/go-playground/validator.v9"
 	// "github.com/labstack/echo/middleware"
 )
 
@@ -15,6 +16,7 @@ type User struct {
 	ID    int    `json:"id" xml:"id" form:"id" query:"id"`
 	Name  string `json:"name" xml:"name" form:"name" query:"name"`
 	Email string `json:"email" xml:"email" form:"email" query:"email"`
+	Age   int    `json:"age" validate:"atoi"`
 }
 
 // Middleware
@@ -62,6 +64,9 @@ func addUser(c echo.Context) error {
 func editUser(c echo.Context) error {
 	u := new(User)
 	if err := c.Bind(u); err != nil {
+		return err
+	}
+	if err := c.Validate(u); err != nil {
 		return err
 	}
 	return c.JSON(http.StatusOK, u)
@@ -128,8 +133,42 @@ func secret() echo.HandlerFunc {
 	}
 }
 
+// バリデーションのサンプル
+var valIns = newValidator()
+
+//Validator はバリデーションを
+type Validator struct {
+	validator *validator.Validate
+}
+
+// Validate Validate
+func (v *Validator) Validate(i interface{}) error {
+	return v.validator.Struct(i)
+}
+
+func newValidator() *Validator {
+	v := new(Validator)
+	v.validator = validator.New()
+	v.validator.RegisterValidation("atoi", atoiValid)
+	return v
+}
+
+// 数値変換チェック
+func atoiValid(fl validator.FieldLevel) bool {
+	// if fl.Field().Len() < 1 {
+	// 	return true
+	// }
+	v, err := strconv.Atoi(fl.Field().String())
+	if (err == nil) && (v > 10) {
+		return true
+	}
+	return false
+}
+
 func main() {
 	e := echo.New()
+
+	e.Validator = newValidator()
 
 	// e.Use(middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
 	// 	Skipper: func(c echo.Context) bool {
